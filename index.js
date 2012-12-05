@@ -5,6 +5,8 @@ var cluster = require('cluster')
   , undeadCount = 0
   , children = [];
 
+exports.restartTimeout = 3000;
+
 exports.start = function(workers, basedir) {
   if (cluster.isMaster) {
     runMaster(workers, basedir);
@@ -87,8 +89,10 @@ function spawnWorker(app, autoRestart) {
     undeadCount = Infinity;
     // auto restart workers on death
     worker.on('exit', function(code, signal) {
-      console.log("Starting another " + app + " worker.");
-      spawnWorker(app, autoRestart);
+      setTimeout(function() {
+        console.log("Starting another " + app + " worker.");
+        spawnWorker(app, autoRestart);
+      }, exports.restartTimeout);
     });
   }
 };
