@@ -37,7 +37,7 @@ function runMaster(workers, basedir) {
 
   process.addListener('SIGTERM', function() {
     for (var i = 0; i < children.length; ++i) {
-      children[i].kill();
+      children[i].destroy();
     }
   });
 
