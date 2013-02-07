@@ -35,11 +35,16 @@ function runMaster(workers, basedir) {
     }
   });
 
-  process.addListener('SIGTERM', function() {
+  process.addListener('SIGTERM', destroyChildren);
+  process.addListener('SIGINT', destroyChildren);
+  process.addListener('SIGHUP', destroyChildren);
+
+  function destroyChildren() {
     for (var i = 0; i < children.length; ++i) {
       children[i].destroy();
     }
-  });
+    process.exit();
+  }
 
 };
 

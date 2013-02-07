@@ -2,7 +2,7 @@
   "name": "optimus",
   "description": "Cluster Manager",
   "author": "Adam Blackburn <adam@ifit.com>",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "index.js",
   "keywords": ["cluster", "confrodo", "load", "balancer"],
   "repository": "git://github.com/ifit/optimus.git",
