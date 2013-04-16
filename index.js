@@ -9,6 +9,8 @@ var cluster = require('cluster')
   , finished = []
   ;
 
+exports.restartTimeout = 3000;
+
 exports.start = function(_workers, _basedir) {
   workers = _workers;
   basedir = _basedir;
@@ -49,11 +51,16 @@ function runMaster() {
     }
   });
 
-  process.addListener('SIGTERM', function() {
+  process.addListener('SIGTERM', destroyChildren);
+  process.addListener('SIGINT', destroyChildren);
+  process.addListener('SIGHUP', destroyChildren);
+
+  function destroyChildren() {
     for (var i = 0; i < children.length; ++i) {
-      children[i].kill();
+      children[i].destroy();
     }
-  });
+    process.exit();
+  }
 
 };
 
@@ -115,8 +122,10 @@ function spawnWorker(app, autoRestart) {
     undeadCount = Infinity;
     // auto restart workers on death
     worker.on('exit', function(code, signal) {
-      console.log("Starting another " + app + " worker.");
-      spawnWorker(basedir, app, autoRestart);
+      setTimeout(function() {
+        console.log("Starting another " + app + " worker.");
+        spawnWorker(app, autoRestart);
+      }, exports.restartTimeout);
     });
   }
 };
