@@ -11,6 +11,10 @@ var cluster = require('cluster')
 
 exports.restartTimeout = 3000;
 
+exports.ready = function() {
+  process.send({status: 'ready'});
+}
+
 exports.start = function(_workers, _basedir) {
   workers = _workers;
   basedir = _basedir;
