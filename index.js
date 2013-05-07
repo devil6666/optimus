@@ -1,21 +1,32 @@
 "use strict";
 
-var cluster = require('cluster')
-  , os = require('os')
+var cluster     = require('cluster')
+  , events      = require('events')
+  , os          = require('os')
+  , optimus     = new events.EventEmitter
+  , children    = []
+  , finished    = []
   , undeadCount = 0
-  , children = []
   , workers
   , basedir
-  , finished = []
   ;
 
-exports.restartTimeout = 3000;
+module.exports = optimus;
 
-exports.ready = function() {
-  process.send({status: 'ready'});
+optimus.restartTimeout = 3000;
+
+optimus.isMaster = cluster.isMaster;
+
+optimus.ready = function() {
+  if (process.send) {
+    process.send({status: 'ready'});
+    return true;
+  } else {
+    return false;
+  }
 }
 
-exports.start = function(_workers, _basedir) {
+optimus.start = function(_workers, _basedir) {
   workers = _workers;
   basedir = _basedir;
   if (cluster.isMaster) {
@@ -28,17 +39,19 @@ exports.start = function(_workers, _basedir) {
 function checkStatuses() {
   var apps = {};
   children.forEach(function(child) {
-    if(child.status === 'ready')
+    if (child.status === 'ready') {
       apps[child.app] = !apps[child.app] ? 1 : apps[child.app] + 1 ;
-  });
-  Object.keys(workers).forEach(function(app) {
-    if(finished.indexOf(app) == -1 && getCount(app) === apps[app]) {
-      finished.push(app);
-      console.log('optimus::' + app + ':ready');
     }
   });
-  if(Object.keys(workers).length == finished.length)
-    console.log('optimius:::ready');
+  Object.keys(workers).forEach(function(app) {
+    if (finished.indexOf(app) == -1 && getCount(app) === apps[app]) {
+      finished.push(app);
+      optimus.emit('ready', app);
+    }
+  });
+  if (Object.keys(workers).length == finished.length) {
+    optimus.emit('all ready');
+  }
 }
 
 function runMaster() {
@@ -129,7 +142,7 @@ function spawnWorker(app, autoRestart) {
       setTimeout(function() {
         console.log("Starting another " + app + " worker.");
         spawnWorker(app, autoRestart);
-      }, exports.restartTimeout);
+      }, optimus.restartTimeout);
     });
   }
 };
